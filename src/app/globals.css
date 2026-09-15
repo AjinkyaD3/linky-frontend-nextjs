@@ -1,0 +1,138 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --background: #faf8f4;
+  --foreground: #1a1712;
+  --card: #ffffff;
+  --card-foreground: #1a1712;
+  --muted: #efe9e0;
+  --muted-foreground: #6f665a;
+  --border: #e2d9cb;
+  --input: #e2d9cb;
+  --accent: #c1631b;
+  --accent-foreground: #fff8f0;
+  --accent-hover: #a5530f;
+  --destructive: #b3261e;
+  --destructive-foreground: #fff5f4;
+  --success: #3f7d52;
+  --success-foreground: #f2fbf5;
+  --ring: #c1631b;
+
+  --radius: 0.625rem;
+}
+
+.dark {
+  --background: #14120e;
+  --foreground: #f1ece2;
+  --card: #1b1813;
+  --card-foreground: #f1ece2;
+  --muted: #221e18;
+  --muted-foreground: #a49a89;
+  --border: #332d24;
+  --input: #332d24;
+  --accent: #e2984a;
+  --accent-foreground: #1c1108;
+  --accent-hover: #ecac68;
+  --destructive: #e2665f;
+  --destructive-foreground: #1c0d0b;
+  --success: #63b47e;
+  --success-foreground: #0c1a10;
+  --ring: #e2984a;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent-hover: var(--accent-hover);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-ring: var(--ring);
+
+  --font-sans: var(--font-manrope);
+  --font-mono: var(--font-jetbrains-mono);
+
+  --radius-sm: calc(var(--radius) - 0.25rem);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) + 0.25rem);
+  --radius-xl: calc(var(--radius) + 0.5rem);
+
+  --animate-fade-in: fade-in 150ms ease-out;
+  --animate-fade-out: fade-out 150ms ease-in;
+  --animate-dialog-in: dialog-in 150ms ease-out;
+  --animate-dialog-out: dialog-out 100ms ease-in;
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  @keyframes fade-out {
+    from {
+      opacity: 1;
+    }
+    to {
+      opacity: 0;
+    }
+  }
+  @keyframes dialog-in {
+    from {
+      opacity: 0;
+      transform: translate(-50%, -50%) scale(0.96);
+    }
+    to {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+  }
+  @keyframes dialog-out {
+    from {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+    to {
+      opacity: 0;
+      transform: translate(-50%, -50%) scale(0.96);
+    }
+  }
+}
+
+body {
+  background: var(--color-background);
+  color: var(--color-foreground);
+}
+
+::selection {
+  background: var(--color-accent);
+  color: var(--color-accent-foreground);
+}
+
+/* Custom scrollbar - subtle, matches the theme instead of the browser default */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-muted-foreground);
+}
