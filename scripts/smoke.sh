@@ -9,7 +9,10 @@ FAILS=0
 
 pass() { echo "  PASS  $1"; }
 fail() { echo "  FAIL  $1  ($2)"; FAILS=$((FAILS + 1)); }
-status() { curl -s -o /dev/null -m 30 -w "%{http_code}" "$1"; }
+# Optional extra request header, e.g. SMOKE_HEADER="x-vercel-protection-bypass: <secret>" for protected preview deployments.
+EXTRA=()
+[ -n "${SMOKE_HEADER:-}" ] && EXTRA=(-H "$SMOKE_HEADER")
+status() { curl -s -o /dev/null -m 30 ${EXTRA[@]+"${EXTRA[@]}"} -w "%{http_code}" "$1"; }
 
 echo "Frontend smoke test against $BASE"
 
@@ -21,10 +24,10 @@ done
 got="$(status "$BASE/this-page-should-not-exist-404")"
 if [ "$got" = "404" ]; then pass "unknown route returns 404"; else fail "unknown route returns 404" "got $got"; fi
 
-TITLE="$(curl -s -m 30 "$BASE/" | sed -n 's/.*<title>\([^<]*\)<.*/\1/p' | head -1)"
+TITLE="$(curl -s -m 30 ${EXTRA[@]+"${EXTRA[@]}"} "$BASE/" | sed -n 's/.*<title>\([^<]*\)<.*/\1/p' | head -1)"
 case "$TITLE" in *Linky*) pass "home page title ($TITLE)";; *) fail "home page title" "got '$TITLE'";; esac
 
-HEADERS="$(curl -s -I -m 30 "$BASE/")"
+HEADERS="$(curl -s -I -m 30 ${EXTRA[@]+"${EXTRA[@]}"} "$BASE/")"
 for h in content-security-policy x-content-type-options x-frame-options referrer-policy; do
   if echo "$HEADERS" | grep -qi "^$h:"; then pass "security header $h"; else fail "security header $h" "missing"; fi
 done

@@ -20,7 +20,34 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Smoke test ${{ github.event.deployment.environment }}
+      # Vercel's deployment protection puts a login in front of the unique deployment URL (and of previews), which
+      # answers with a redirect. That is not a broken site, so say so plainly instead of failing the build.
+      # To test protected deployments too, add a repository secret VERCEL_AUTOMATION_BYPASS_SECRET
+      # (Vercel: Project > Settings > Deployment Protection > Protection Bypass for Automation).
+      - name: Check the deployment can be reached
+        id: reach
         env:
           TARGET: ${{ github.event.deployment_status.environment_url || github.event.deployment_status.target_url }}
-        run: bash scripts/smoke.sh "$TARGET"
+          BYPASS: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+        run: |
+          if [ -n "$BYPASS" ]; then
+            echo "protected=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          CODE="$(curl -s -o /dev/null -m 30 -w '%{http_code}' "$TARGET")"
+          LOCATION="$(curl -s -o /dev/null -m 30 -w '%{redirect_url}' "$TARGET")"
+          if [ "$CODE" = "401" ] || { [ "$CODE" = "302" ] && echo "$LOCATION" | grep -qi 'vercel.com'; }; then
+            echo "protected=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::$TARGET is behind Vercel deployment protection (HTTP $CODE), so the smoke test was skipped. Add the VERCEL_AUTOMATION_BYPASS_SECRET secret to test it."
+          else
+            echo "protected=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Smoke test ${{ github.event.deployment.environment }}
+        if: steps.reach.outputs.protected != 'true'
+        env:
+          TARGET: ${{ github.event.deployment_status.environment_url || github.event.deployment_status.target_url }}
+          BYPASS: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+        run: |
+          if [ -n "$BYPASS" ]; then export SMOKE_HEADER="x-vercel-protection-bypass: $BYPASS"; fi
+          bash scripts/smoke.sh "$TARGET"
