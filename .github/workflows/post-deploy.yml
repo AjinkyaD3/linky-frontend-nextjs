@@ -1,0 +1,26 @@
+name: Post-deploy check
+
+# Vercel deploys through its Git integration (preview for every PR, production for main) and
+# reports each deployment back to GitHub. This workflow reacts to a successful deployment and
+# smoke-tests the live URL, so a broken release is flagged within a minute.
+#
+# One-time setup: none beyond Vercel's GitHub integration. To make a failing check roll back
+# automatically, use Vercel's "Instant Rollback" (Project > Deployments > previous > Promote).
+on:
+  deployment_status
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    name: Smoke test deployment
+    if: github.event.deployment_status.state == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Smoke test ${{ github.event.deployment.environment }}
+        env:
+          TARGET: ${{ github.event.deployment_status.environment_url || github.event.deployment_status.target_url }}
+        run: bash scripts/smoke.sh "$TARGET"

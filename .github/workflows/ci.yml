@@ -10,9 +10,12 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
   build:
-    name: Lint, type-check and build
+    name: Lint, type-check, build and smoke test
     runs-on: ubuntu-latest
     env:
       # The build only needs these to be *present* and well-formed: they feed
@@ -39,3 +42,29 @@ jobs:
 
       - name: Build
         run: npm run build
+
+      # Serve the production build and check routes, 404 handling and security headers.
+      - name: Smoke test the production build
+        run: |
+          nohup npx next start -p 4300 > server.log 2>&1 &
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:4300/ > /dev/null && break
+            sleep 1
+          done
+          bash scripts/smoke.sh http://localhost:4300
+
+      - name: Server log
+        if: failure()
+        run: cat server.log
+
+  # Fails the build on known high/critical vulnerabilities in runtime dependencies.
+  audit:
+    name: Dependency audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm audit --omit=dev --audit-level=high
