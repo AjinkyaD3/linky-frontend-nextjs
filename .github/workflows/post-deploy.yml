@@ -18,7 +18,7 @@ jobs:
     if: github.event.deployment_status.state == 'success'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # Vercel's deployment protection puts a login in front of the unique deployment URL (and of previews), which
       # answers with a redirect. That is not a broken site, so say so plainly instead of failing the build.
