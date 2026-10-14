@@ -23,14 +23,25 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { urlApi } from "@/lib/api";
 import { ApiError, shortLinkUrl } from "@/lib/api-client";
-import type { UrlResponse } from "@/lib/types";
+import { applyUtm, completeRules, localInputToInstant } from "@/lib/link-tools";
+import type { RoutingRule, UrlResponse } from "@/lib/types";
+import { RoutingRulesEditor } from "./routing-rules-editor";
 
 const schema = z.object({
   originalUrl: z.string().min(1, "A URL is required").url("Enter a valid URL"),
-  customAlias: z.string().optional(),
+  customAlias: z
+    .string()
+    .regex(/^$|^[A-Za-z0-9_-]{3,20}$/, "3-20 characters: letters, digits, dash or underscore")
+    .optional(),
   visibility: z.enum(["PUBLIC", "PRIVATE"]),
   password: z.string().optional(),
   isOneTime: z.boolean(),
+  expiresAt: z.string().optional(),
+  utmSource: z.string().optional(),
+  utmMedium: z.string().optional(),
+  utmCampaign: z.string().optional(),
+  utmTerm: z.string().optional(),
+  utmContent: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -39,6 +50,7 @@ export function CreateLinkDialog({ trigger }: { trigger?: React.ReactNode }) {
   const [open, setOpen] = useState(false);
   const [advanced, setAdvanced] = useState(false);
   const [created, setCreated] = useState<UrlResponse | null>(null);
+  const [rules, setRules] = useState<RoutingRule[]>([]);
   const queryClient = useQueryClient();
 
   const {
@@ -59,11 +71,19 @@ export function CreateLinkDialog({ trigger }: { trigger?: React.ReactNode }) {
   const mutation = useMutation({
     mutationFn: (values: FormValues) =>
       urlApi.create({
-        originalUrl: values.originalUrl,
+        originalUrl: applyUtm(values.originalUrl, {
+          source: values.utmSource,
+          medium: values.utmMedium,
+          campaign: values.utmCampaign,
+          term: values.utmTerm,
+          content: values.utmContent,
+        }),
         customAlias: values.customAlias || undefined,
         visibility: values.visibility,
         password: values.password || undefined,
         isOneTime: values.isOneTime,
+        expiresAt: localInputToInstant(values.expiresAt),
+        routingRules: completeRules(rules).length ? completeRules(rules) : undefined,
       }),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["urls"] });
@@ -80,6 +100,7 @@ export function CreateLinkDialog({ trigger }: { trigger?: React.ReactNode }) {
       reset();
       setCreated(null);
       setAdvanced(false);
+      setRules([]);
     }
   }
 
@@ -154,7 +175,16 @@ export function CreateLinkDialog({ trigger }: { trigger?: React.ReactNode }) {
                 <div className="flex flex-col gap-4 rounded-[var(--radius-sm)] border border-border p-4">
                   <div className="flex flex-col gap-1.5">
                     <Label htmlFor="customAlias">Custom alias</Label>
-                    <Input id="customAlias" placeholder="my-link" {...register("customAlias")} />
+                    <Input
+                      id="customAlias"
+                      placeholder="my-link"
+                      maxLength={20}
+                      invalid={!!errors.customAlias}
+                      {...register("customAlias")}
+                    />
+                    {errors.customAlias && (
+                      <p className="text-xs text-destructive">{errors.customAlias.message}</p>
+                    )}
                   </div>
 
                   <div className="flex flex-col gap-1.5">
@@ -181,6 +211,33 @@ export function CreateLinkDialog({ trigger }: { trigger?: React.ReactNode }) {
                       placeholder="Leave blank for no password"
                       {...register("password")}
                     />
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="expiresAt">Expires (optional)</Label>
+                    <Input id="expiresAt" type="datetime-local" {...register("expiresAt")} />
+                    <p className="text-xs text-muted-foreground">
+                      After this time the link shows an &quot;expired&quot; page.
+                    </p>
+                  </div>
+
+                  <fieldset className="flex flex-col gap-2">
+                    <legend className="mb-1 text-sm font-medium">Campaign tracking (UTM)</legend>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Input placeholder="source (newsletter)" aria-label="UTM source" {...register("utmSource")} />
+                      <Input placeholder="medium (email)" aria-label="UTM medium" {...register("utmMedium")} />
+                      <Input placeholder="campaign (spring_sale)" aria-label="UTM campaign" {...register("utmCampaign")} />
+                      <Input placeholder="term" aria-label="UTM term" {...register("utmTerm")} />
+                      <Input className="col-span-2" placeholder="content" aria-label="UTM content" {...register("utmContent")} />
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Added to the destination URL as utm_* parameters.
+                    </p>
+                  </fieldset>
+
+                  <div className="flex flex-col gap-1.5">
+                    <Label>Smart routing</Label>
+                    <RoutingRulesEditor value={rules} onChange={setRules} />
                   </div>
 
                   <div className="flex items-center justify-between">

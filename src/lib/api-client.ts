@@ -137,6 +137,24 @@ export function shortLinkUrl(shortCode: string): string {
   return `${API_URL}/${shortCode}`;
 }
 
-export function qrCodeUrl(shortCode: string, format: "png" | "svg" = "png"): string {
-  return `${API_URL}/api/url/${shortCode}/qrcode?format=${format}`;
+export interface QrOptions {
+  format?: "png" | "svg";
+  /** #rrggbb */
+  fg?: string;
+  /** #rrggbb */
+  bg?: string;
+  size?: number;
+  margin?: number;
+  download?: boolean;
+}
+
+export function qrCodeUrl(shortCode: string, options: QrOptions | "png" | "svg" = {}): string {
+  const o: QrOptions = typeof options === "string" ? { format: options } : options;
+  const query = new URLSearchParams({ format: o.format ?? "png" });
+  if (o.fg) query.set("fg", o.fg.replace("#", ""));
+  if (o.bg) query.set("bg", o.bg.replace("#", ""));
+  if (o.size) query.set("size", String(o.size));
+  if (o.margin !== undefined) query.set("margin", String(o.margin));
+  if (o.download) query.set("download", "true");
+  return `${API_URL}/api/url/${shortCode}/qrcode?${query.toString()}`;
 }

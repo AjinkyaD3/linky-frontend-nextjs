@@ -39,6 +39,9 @@ import { cn, formatDate, formatNumber } from "@/lib/utils";
 export function LinkRow({ url }: { url: UrlResponse }) {
   const queryClient = useQueryClient();
   const [qrOpen, setQrOpen] = useState(false);
+  // Captured once on mount: render must stay pure, and minute-level freshness is irrelevant for a badge.
+  const [now] = useState(() => Date.now());
+  const expired = !!url.expiresAt && new Date(url.expiresAt).getTime() < now;
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ["urls"] });
 
@@ -95,6 +98,16 @@ export function LinkRow({ url }: { url: UrlResponse }) {
           <div className="flex flex-wrap items-center gap-1.5">
             {url.visibility === "PRIVATE" && <Badge variant="accent">Private</Badge>}
             {url.isArchived && <Badge>Archived</Badge>}
+            {url.isOneTime && <Badge variant="accent">One-time</Badge>}
+            {url.hasPassword && <Badge variant="accent">Password</Badge>}
+            {url.routingRules && url.routingRules.length > 0 && (
+              <Badge variant="accent">{url.routingRules.length} routing {url.routingRules.length === 1 ? "rule" : "rules"}</Badge>
+            )}
+            {url.expiresAt && (
+              <Badge variant={expired ? "destructive" : "neutral"}>
+                {expired ? "Expired" : `Expires ${formatDate(url.expiresAt)}`}
+              </Badge>
+            )}
             {url.tags?.map((tag) => (
               <Badge key={tag}>{tag}</Badge>
             ))}

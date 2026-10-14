@@ -8,6 +8,8 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 import { ClicksChart } from "@/components/dashboard/clicks-chart";
+import { LinkSettingsCard } from "@/components/dashboard/link-settings-card";
+import { QrCard } from "@/components/dashboard/qr-card";
 import { TopList } from "@/components/dashboard/top-list";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -157,6 +159,13 @@ export function LinkDetail({ shortCode }: { shortCode: string }) {
         </Card>
       </div>
 
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          <LinkSettingsCard key={`${url.originalUrl}|${url.expiresAt}|${JSON.stringify(url.routingRules)}`} url={url} />
+        </div>
+        <QrCard shortCode={shortCode} />
+      </div>
+
       <div>
         <div className="mb-3 flex items-center justify-between">
           <h2 className="font-semibold">Analytics</h2>
@@ -185,12 +194,22 @@ export function LinkDetail({ shortCode }: { shortCode: string }) {
         </Card>
 
         {analytics && (
+          <>
           <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
             <TopList title="Top browsers" items={analytics.topBrowsers} />
             <TopList title="Top devices" items={analytics.topDevices} />
             <TopList title="Top countries" items={analytics.topCountries} />
+            <TopList title="Top cities" items={analytics.topCities ?? []} />
             <TopList title="Top referrers" items={analytics.topReferrers} />
           </div>
+          <p className="mt-3 text-xs text-muted-foreground">
+            This product includes GeoLite2 data created by{" "}
+            <a href="https://www.maxmind.com" target="_blank" rel="noreferrer" className="underline hover:text-foreground">
+              MaxMind
+            </a>
+            . Locations are approximate, and visitor IPs are never stored.
+          </p>
+          </>
         )}
       </div>
     </div>

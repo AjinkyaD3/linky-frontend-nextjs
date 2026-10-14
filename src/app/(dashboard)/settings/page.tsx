@@ -143,6 +143,7 @@ function ProfileSection() {
 }
 
 function PasswordSection() {
+  const logout = useLogout();
   const {
     register,
     handleSubmit,
@@ -157,8 +158,10 @@ function PasswordSection() {
         newPassword: values.newPassword,
       }),
     onSuccess: () => {
-      toast.success("Password changed");
       reset();
+      // The server ended every session when the password changed, so sign in again with the new one.
+      toast.success("Password changed. Please sign in again.");
+      void logout();
     },
     onError: (err) => {
       toast.error(

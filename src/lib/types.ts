@@ -32,6 +32,25 @@ export interface UrlResponse {
   isArchived: boolean;
   visibility: Visibility;
   tags: string[] | null;
+  expiresAt: string | null;
+  isOneTime: boolean;
+  hasPassword: boolean;
+  routingRules: RoutingRule[] | null;
+}
+
+export type RoutingType = "device" | "os" | "country";
+
+export interface RoutingRule {
+  type: RoutingType;
+  value: string;
+  url: string;
+}
+
+export interface BulkResult {
+  index: number;
+  success: boolean;
+  link: UrlResponse | null;
+  error: string | null;
 }
 
 export interface CreateUrlPayload {
@@ -40,12 +59,18 @@ export interface CreateUrlPayload {
   visibility?: Visibility;
   password?: string;
   isOneTime?: boolean;
+  expiresAt?: string;
+  routingRules?: RoutingRule[];
 }
 
 export interface UpdateUrlPayload {
   title?: string;
   description?: string;
   tags?: string[];
+  originalUrl?: string;
+  expiresAt?: string;
+  clearExpiry?: boolean;
+  routingRules?: RoutingRule[];
 }
 
 export interface TagResponse {
@@ -77,6 +102,7 @@ export interface AnalyticsResponse {
   topBrowsers: TopItem[];
   topDevices: TopItem[];
   topCountries: TopItem[];
+  topCities: TopItem[];
   topReferrers: TopItem[];
 }
 
@@ -92,4 +118,55 @@ export interface ApiErrorBody {
   error?: string;
   message?: string;
   details?: Record<string, string>;
+}
+
+export interface OwnerPageLink {
+  label: string;
+  url: string;
+  shortCode: string;
+}
+
+export interface OwnerPage {
+  id: number;
+  slug: string;
+  title: string;
+  bio: string | null;
+  links: OwnerPageLink[];
+}
+
+export interface PagePayload {
+  slug: string;
+  title: string;
+  bio?: string;
+  links: { label: string; url: string }[];
+}
+
+export interface PublicPage {
+  slug: string;
+  title: string;
+  bio: string | null;
+  links: { label: string; shortCode: string }[];
+}
+
+export interface Webhook {
+  id: number;
+  url: string;
+  events: string[];
+  active: boolean;
+  consecutiveFailures: number;
+  disabledReason: string | null;
+  createdAt: string;
+  /** Only present in the response to creating a webhook. */
+  secret?: string | null;
+}
+
+export interface Delivery {
+  id: number;
+  event: string;
+  status: "PENDING" | "DELIVERED" | "FAILED";
+  attempts: number;
+  lastStatusCode: number | null;
+  lastError: string | null;
+  createdAt: string;
+  deliveredAt: string | null;
 }

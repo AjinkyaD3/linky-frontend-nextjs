@@ -3,12 +3,17 @@ import type {
   AdminStats,
   AnalyticsResponse,
   ApiKeyDto,
+  BulkResult,
   CreateUrlPayload,
+  Delivery,
   LoginResponse,
+  OwnerPage,
+  PagePayload,
   TagResponse,
   UpdateUrlPayload,
   UrlResponse,
   User,
+  Webhook,
 } from "./types";
 
 export const authApi = {
@@ -67,7 +72,12 @@ export const userApi = {
 
 export const urlApi = {
   create: (data: CreateUrlPayload) =>
-    apiFetch<UrlResponse>("/api/url", { method: "POST", body: data, skipAuth: true }),
+    // Sends the access token when there is one so the link is owned by the signed-in user;
+    // anonymous visitors simply have no token. (Relying on the cookie alone breaks cross-site.)
+    apiFetch<UrlResponse>("/api/url", { method: "POST", body: data }),
+
+  bulkCreate: (links: CreateUrlPayload[]) =>
+    apiFetch<BulkResult[]>("/api/url/bulk", { method: "POST", body: { links } }),
 
   getById: (id: number) => apiFetch<UrlResponse>(`/api/url/${id}`),
 
@@ -127,4 +137,23 @@ export const adminApi = {
   users: () => apiFetch<User[]>("/api/admin/users"),
   forceDeleteUrl: (id: number) =>
     apiFetch<void>(`/api/admin/urls/${id}`, { method: "DELETE" }),
+};
+
+export const pageApi = {
+  mine: () => apiFetch<OwnerPage[]>("/api/pages"),
+  create: (data: PagePayload) => apiFetch<OwnerPage>("/api/pages", { method: "POST", body: data }),
+  update: (id: number, data: PagePayload) =>
+    apiFetch<OwnerPage>(`/api/pages/${id}`, { method: "PUT", body: data }),
+  remove: (id: number) => apiFetch<void>(`/api/pages/${id}`, { method: "DELETE" }),
+};
+
+export const webhookApi = {
+  list: () => apiFetch<Webhook[]>("/api/webhooks"),
+  create: (data: { url: string; events: string[] }) =>
+    apiFetch<Webhook>("/api/webhooks", { method: "POST", body: data }),
+  update: (id: number, data: { url?: string; events?: string[]; active?: boolean }) =>
+    apiFetch<Webhook>(`/api/webhooks/${id}`, { method: "PUT", body: data }),
+  remove: (id: number) => apiFetch<void>(`/api/webhooks/${id}`, { method: "DELETE" }),
+  test: (id: number) => apiFetch<void>(`/api/webhooks/${id}/test`, { method: "POST" }),
+  deliveries: (id: number) => apiFetch<Delivery[]>(`/api/webhooks/${id}/deliveries`),
 };

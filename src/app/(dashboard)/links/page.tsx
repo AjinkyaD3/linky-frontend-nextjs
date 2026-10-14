@@ -3,6 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link2, Loader2, Search } from "lucide-react";
 import { useState } from "react";
+import { BulkCreateDialog } from "@/components/dashboard/bulk-create-dialog";
 import { CreateLinkDialog } from "@/components/dashboard/create-link-dialog";
 import { LinkRow } from "@/components/dashboard/link-row";
 import { PageHeader } from "@/components/dashboard/page-header";
@@ -41,7 +42,12 @@ export default function LinksPage() {
       <PageHeader
         title="Links"
         description="All the short links you've created."
-        action={<CreateLinkDialog />}
+        action={
+          <div className="flex items-center gap-2">
+            <BulkCreateDialog />
+            <CreateLinkDialog />
+          </div>
+        }
       />
 
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

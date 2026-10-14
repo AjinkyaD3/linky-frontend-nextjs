@@ -1,7 +1,9 @@
 "use client";
 
 import {
+  FileText,
   KeyRound,
+  Webhook,
   LayoutDashboard,
   Link2,
   Settings,
@@ -17,7 +19,9 @@ import type { Role } from "@/lib/types";
 const NAV_ITEMS = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
   { href: "/links", label: "Links", icon: Link2 },
+  { href: "/pages", label: "Pages", icon: FileText },
   { href: "/tags", label: "Tags", icon: Tag },
+  { href: "/webhooks", label: "Webhooks", icon: Webhook },
   { href: "/api-keys", label: "API Keys", icon: KeyRound },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
