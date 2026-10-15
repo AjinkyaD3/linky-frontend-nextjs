@@ -75,10 +75,7 @@ async function refreshAccessToken(): Promise<string | null> {
   return refreshPromise;
 }
 
-export async function apiFetch<T>(
-  path: string,
-  options: RequestOptions = {}
-): Promise<T> {
+async function apiRequest(path: string, options: RequestOptions = {}): Promise<Response> {
   const { body, skipAuth, skipRefresh, headers, ...rest } = options;
 
   const doFetch = async (): Promise<Response> => {
@@ -122,6 +119,10 @@ export async function apiFetch<T>(
     );
   }
 
+  return res;
+}
+
+async function parseBody<T>(res: Response): Promise<T> {
   if (res.status === 204) {
     return undefined as T;
   }
@@ -131,6 +132,21 @@ export async function apiFetch<T>(
     return (await res.json()) as T;
   }
   return undefined as T;
+}
+
+export async function apiFetch<T>(path: string, options: RequestOptions = {}): Promise<T> {
+  return parseBody<T>(await apiRequest(path, options));
+}
+
+/** Like apiFetch, but also returns the server's X-Total-Count for paged lists. */
+export async function apiFetchPage<T>(
+  path: string,
+  options: RequestOptions = {}
+): Promise<{ items: T[]; total: number }> {
+  const res = await apiRequest(path, options);
+  const items = (await parseBody<T[]>(res)) ?? [];
+  const total = Number(res.headers.get("X-Total-Count"));
+  return { items, total: Number.isFinite(total) && total > 0 ? total : items.length };
 }
 
 export function shortLinkUrl(shortCode: string): string {

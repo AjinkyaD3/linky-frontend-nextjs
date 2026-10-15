@@ -1,4 +1,4 @@
-import { apiFetch } from "./api-client";
+import { apiFetch, apiFetchPage } from "./api-client";
 import type {
   AdminStats,
   AnalyticsResponse,
@@ -70,6 +70,27 @@ export const userApi = {
   },
 };
 
+interface MineParams {
+  search?: string;
+  sort?: string;
+  tag?: string;
+  page?: number;
+  size?: number;
+}
+
+function minePath(params?: MineParams) {
+  const query = new URLSearchParams();
+  if (params?.search) query.set("search", params.search);
+  if (params?.sort) query.set("sort", params.sort);
+  if (params?.tag) query.set("tag", params.tag);
+  if (params?.size !== undefined) {
+    query.set("size", String(params.size));
+    query.set("page", String(params.page ?? 0));
+  }
+  const qs = query.toString();
+  return `/api/url/my${qs ? `?${qs}` : ""}`;
+}
+
 function pageQuery(params?: { page?: number; size?: number }) {
   if (params?.size === undefined) return "";
   return `?page=${params.page ?? 0}&size=${params.size}`;
@@ -86,23 +107,21 @@ export const urlApi = {
 
   getById: (id: number) => apiFetch<UrlResponse>(`/api/url/${id}`),
 
-  getMine: (params?: { search?: string; sort?: string; tag?: string; page?: number; size?: number }) => {
-    const query = new URLSearchParams();
-    if (params?.search) query.set("search", params.search);
-    if (params?.sort) query.set("sort", params.sort);
-    if (params?.tag) query.set("tag", params.tag);
-    if (params?.size !== undefined) {
-      query.set("size", String(params.size));
-      query.set("page", String(params.page ?? 0));
-    }
-    const qs = query.toString();
-    return apiFetch<UrlResponse[]>(`/api/url/my${qs ? `?${qs}` : ""}`);
-  },
+  getMine: (params?: MineParams) => apiFetch<UrlResponse[]>(minePath(params)),
 
-  getFavorites: (params?: { page?: number; size?: number }) =>
-    apiFetch<UrlResponse[]>(`/api/url/my/favorites${pageQuery(params)}`),
-  getArchived: (params?: { page?: number; size?: number }) =>
-    apiFetch<UrlResponse[]>(`/api/url/my/archived${pageQuery(params)}`),
+  getMinePage: (params: MineParams) => apiFetchPage<UrlResponse>(minePath(params)),
+
+  getFavoritesPage: (params: { page?: number; size?: number }) =>
+    apiFetchPage<UrlResponse>(`/api/url/my/favorites${pageQuery(params)}`),
+
+  getArchivedPage: (params: { page?: number; size?: number }) =>
+    apiFetchPage<UrlResponse>(`/api/url/my/archived${pageQuery(params)}`),
+
+  getSummary: () =>
+    apiFetch<{ totalLinks: number; totalClicks: number; favorites: number }>("/api/url/my/summary"),
+
+  getByCode: (shortCode: string) =>
+    apiFetch<UrlResponse>(`/api/url/by-code/${encodeURIComponent(shortCode)}`),
 
   toggleFavorite: (shortCode: string) =>
     apiFetch<UrlResponse>(`/api/url/${shortCode}/favorite`, { method: "PUT" }),

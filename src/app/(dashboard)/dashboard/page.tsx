@@ -37,14 +37,14 @@ function StatCard({
 }
 
 export default function DashboardOverviewPage() {
-  const { data: urls, isLoading } = useQuery({
-    queryKey: ["urls", "mine"],
-    queryFn: () => urlApi.getMine(),
+  const { data: summary } = useQuery({
+    queryKey: ["urls", "summary"],
+    queryFn: () => urlApi.getSummary(),
   });
-
-  const totalClicks = urls?.reduce((sum, u) => sum + u.clickCount, 0) ?? 0;
-  const favorites = urls?.filter((u) => u.isFavorite).length ?? 0;
-  const recent = urls?.slice(0, 5) ?? [];
+  const { data: recent = [], isLoading } = useQuery({
+    queryKey: ["urls", "recent"],
+    queryFn: () => urlApi.getMine({ sort: "newest", page: 0, size: 5 }),
+  });
 
   return (
     <div>
@@ -55,15 +55,15 @@ export default function DashboardOverviewPage() {
       />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <StatCard icon={Link2} label="Total links" value={urls?.length ?? 0} />
-        <StatCard icon={MousePointerClick} label="Total clicks" value={totalClicks} />
-        <StatCard icon={Star} label="Favorites" value={favorites} />
+        <StatCard icon={Link2} label="Total links" value={summary?.totalLinks ?? 0} />
+        <StatCard icon={MousePointerClick} label="Total clicks" value={summary?.totalClicks ?? 0} />
+        <StatCard icon={Star} label="Favorites" value={summary?.favorites ?? 0} />
       </div>
 
       <div className="mt-8">
         <div className="mb-3 flex items-center justify-between">
           <h2 className="font-semibold">Recent links</h2>
-          {!!urls?.length && (
+          {!!summary?.totalLinks && (
             <Link href="/links" className="text-sm text-accent hover:underline">
               View all
             </Link>

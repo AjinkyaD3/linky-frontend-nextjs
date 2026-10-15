@@ -32,17 +32,18 @@ export default function LinksPage() {
 
   const [page, setPage] = useState(0);
 
-  const { data: urls, isLoading } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ["urls", filter, search, sort, page],
     queryFn: () => {
       const paging = { page, size: PAGE_SIZE };
-      if (filter === "favorites") return urlApi.getFavorites(paging);
-      if (filter === "archived") return urlApi.getArchived(paging);
-      return urlApi.getMine({ search: search || undefined, sort, ...paging });
+      if (filter === "favorites") return urlApi.getFavoritesPage(paging);
+      if (filter === "archived") return urlApi.getArchivedPage(paging);
+      return urlApi.getMinePage({ search: search || undefined, sort, ...paging });
     },
     placeholderData: keepPreviousData,
   });
-  const hasNext = (urls?.length ?? 0) === PAGE_SIZE;
+  const urls = data?.items;
+  const hasNext = (page + 1) * PAGE_SIZE < (data?.total ?? 0);
 
   return (
     <div>

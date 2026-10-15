@@ -40,11 +40,11 @@ export function LinkDetail({ shortCode }: { shortCode: string }) {
   const [days, setDays] = useState("7");
   const queryClient = useQueryClient();
 
-  const { data: urls, isLoading: loadingUrl } = useQuery({
-    queryKey: ["urls", "mine"],
-    queryFn: () => urlApi.getMine(),
+  const { data: url, isLoading: loadingUrl } = useQuery({
+    queryKey: ["urls", "by-code", shortCode],
+    queryFn: () => urlApi.getByCode(shortCode),
+    retry: false,
   });
-  const url = urls?.find((u) => u.shortCode === shortCode);
 
   const { data: analytics, isLoading: loadingAnalytics } = useQuery({
     queryKey: ["analytics", shortCode, days],
