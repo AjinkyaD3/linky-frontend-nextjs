@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { Link2, Loader2, Search } from "lucide-react";
 import { useState } from "react";
 import { BulkCreateDialog } from "@/components/dashboard/bulk-create-dialog";
@@ -23,19 +23,26 @@ import { urlApi } from "@/lib/api";
 
 type Filter = "all" | "favorites" | "archived";
 
+const PAGE_SIZE = 20;
+
 export default function LinksPage() {
   const [filter, setFilter] = useState<Filter>("all");
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<string>("newest");
 
+  const [page, setPage] = useState(0);
+
   const { data: urls, isLoading } = useQuery({
-    queryKey: ["urls", filter, search, sort],
+    queryKey: ["urls", filter, search, sort, page],
     queryFn: () => {
-      if (filter === "favorites") return urlApi.getFavorites();
-      if (filter === "archived") return urlApi.getArchived();
-      return urlApi.getMine({ search: search || undefined, sort });
+      const paging = { page, size: PAGE_SIZE };
+      if (filter === "favorites") return urlApi.getFavorites(paging);
+      if (filter === "archived") return urlApi.getArchived(paging);
+      return urlApi.getMine({ search: search || undefined, sort, ...paging });
     },
+    placeholderData: keepPreviousData,
   });
+  const hasNext = (urls?.length ?? 0) === PAGE_SIZE;
 
   return (
     <div>
@@ -51,7 +58,10 @@ export default function LinksPage() {
       />
 
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <Tabs value={filter} onValueChange={(v) => setFilter(v as Filter)}>
+        <Tabs value={filter} onValueChange={(v) => {
+            setFilter(v as Filter);
+            setPage(0);
+          }}>
           <TabsList>
             <TabsTrigger value="all">All</TabsTrigger>
             <TabsTrigger value="favorites">Favorites</TabsTrigger>
@@ -65,12 +75,21 @@ export default function LinksPage() {
             <Input
               placeholder="Search links..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(0);
+              }}
               className="w-full pl-8 sm:w-56"
             />
           </div>
           {filter === "all" && (
-            <Select value={sort} onValueChange={setSort}>
+            <Select
+              value={sort}
+              onValueChange={(v) => {
+                setSort(v);
+                setPage(0);
+              }}
+            >
               <SelectTrigger className="w-36">
                 <SelectValue />
               </SelectTrigger>
@@ -110,6 +129,18 @@ export default function LinksPage() {
           )}
         </CardContent>
       </Card>
+
+      {(page > 0 || hasNext) && (
+        <div className="mt-4 flex items-center justify-between">
+          <Button variant="secondary" size="sm" disabled={page === 0} onClick={() => setPage((p) => p - 1)}>
+            Previous
+          </Button>
+          <span className="text-sm text-muted-foreground">Page {page + 1}</span>
+          <Button variant="secondary" size="sm" disabled={!hasNext} onClick={() => setPage((p) => p + 1)}>
+            Next
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

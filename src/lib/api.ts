@@ -70,6 +70,11 @@ export const userApi = {
   },
 };
 
+function pageQuery(params?: { page?: number; size?: number }) {
+  if (params?.size === undefined) return "";
+  return `?page=${params.page ?? 0}&size=${params.size}`;
+}
+
 export const urlApi = {
   create: (data: CreateUrlPayload) =>
     // Sends the access token when there is one so the link is owned by the signed-in user;
@@ -81,17 +86,23 @@ export const urlApi = {
 
   getById: (id: number) => apiFetch<UrlResponse>(`/api/url/${id}`),
 
-  getMine: (params?: { search?: string; sort?: string; tag?: string }) => {
+  getMine: (params?: { search?: string; sort?: string; tag?: string; page?: number; size?: number }) => {
     const query = new URLSearchParams();
     if (params?.search) query.set("search", params.search);
     if (params?.sort) query.set("sort", params.sort);
     if (params?.tag) query.set("tag", params.tag);
+    if (params?.size !== undefined) {
+      query.set("size", String(params.size));
+      query.set("page", String(params.page ?? 0));
+    }
     const qs = query.toString();
     return apiFetch<UrlResponse[]>(`/api/url/my${qs ? `?${qs}` : ""}`);
   },
 
-  getFavorites: () => apiFetch<UrlResponse[]>("/api/url/my/favorites"),
-  getArchived: () => apiFetch<UrlResponse[]>("/api/url/my/archived"),
+  getFavorites: (params?: { page?: number; size?: number }) =>
+    apiFetch<UrlResponse[]>(`/api/url/my/favorites${pageQuery(params)}`),
+  getArchived: (params?: { page?: number; size?: number }) =>
+    apiFetch<UrlResponse[]>(`/api/url/my/archived${pageQuery(params)}`),
 
   toggleFavorite: (shortCode: string) =>
     apiFetch<UrlResponse>(`/api/url/${shortCode}/favorite`, { method: "PUT" }),
