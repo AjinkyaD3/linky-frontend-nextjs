@@ -2,7 +2,7 @@
 
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { Link2, Loader2, Search } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { BulkCreateDialog } from "@/components/dashboard/bulk-create-dialog";
 import { CreateLinkDialog } from "@/components/dashboard/create-link-dialog";
 import { LinkRow } from "@/components/dashboard/link-row";
@@ -32,13 +32,20 @@ export default function LinksPage() {
 
   const [page, setPage] = useState(0);
 
+  // Wait for a pause in typing so each keystroke is not its own database query.
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  useEffect(() => {
+    const id = setTimeout(() => setDebouncedSearch(search.trim()), 300);
+    return () => clearTimeout(id);
+  }, [search]);
+
   const { data, isLoading } = useQuery({
-    queryKey: ["urls", filter, search, sort, page],
+    queryKey: ["urls", filter, debouncedSearch, sort, page],
     queryFn: () => {
       const paging = { page, size: PAGE_SIZE };
       if (filter === "favorites") return urlApi.getFavoritesPage(paging);
       if (filter === "archived") return urlApi.getArchivedPage(paging);
-      return urlApi.getMinePage({ search: search || undefined, sort, ...paging });
+      return urlApi.getMinePage({ search: debouncedSearch || undefined, sort, ...paging });
     },
     placeholderData: keepPreviousData,
   });
@@ -70,20 +77,21 @@ export default function LinksPage() {
           </TabsList>
         </Tabs>
 
-        <div className="flex gap-2">
-          <div className="relative">
-            <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Search links..."
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setPage(0);
-              }}
-              className="w-full pl-8 sm:w-56"
-            />
-          </div>
-          {filter === "all" && (
+        {/* Search and sort apply to the full list; the Favorites and Archived views are not searchable. */}
+        {filter === "all" && (
+          <div className="flex gap-2">
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Search links..."
+                value={search}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setPage(0);
+                }}
+                className="w-full pl-8 sm:w-56"
+              />
+            </div>
             <Select
               value={sort}
               onValueChange={(v) => {
@@ -100,8 +108,8 @@ export default function LinksPage() {
                 <SelectItem value="clicks">Most clicks</SelectItem>
               </SelectContent>
             </Select>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
       <Card>

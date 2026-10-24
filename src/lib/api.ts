@@ -138,10 +138,11 @@ export const urlApi = {
   remove: (id: number) => apiFetch<void>(`/api/url/${id}`, { method: "DELETE" }),
 
   unlock: (shortCode: string, password: string) =>
+    // Signed-in visitors send their token: a private link only unlocks for its owner.
     apiFetch<{ originalUrl: string }>(`/${shortCode}/unlock`, {
       method: "POST",
       body: { password },
-      skipAuth: true,
+      skipRefresh: true,
     }),
 };
 
