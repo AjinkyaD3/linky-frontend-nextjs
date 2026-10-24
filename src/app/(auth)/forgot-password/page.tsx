@@ -52,7 +52,9 @@ export default function ForgotPasswordPage() {
         </p>
       </div>
 
+      {/* method="post" so a submit before hydration can never put the email in the URL */}
       <form
+        method="post"
         className="flex flex-col gap-4"
         onSubmit={handleSubmit((values) => mutation.mutate(values))}
       >

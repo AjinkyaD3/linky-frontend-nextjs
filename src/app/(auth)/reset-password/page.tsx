@@ -81,7 +81,9 @@ function ResetPasswordForm() {
         <h1 className="text-lg font-semibold">Choose a new password</h1>
       </div>
 
+      {/* method="post" so a submit before hydration can never put the new password in the URL */}
       <form
+        method="post"
         className="flex flex-col gap-4"
         onSubmit={handleSubmit((values) => mutation.mutate(values))}
       >

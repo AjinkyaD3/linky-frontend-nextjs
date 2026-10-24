@@ -47,7 +47,9 @@ export default function RegisterPage() {
         <p className="text-sm text-muted-foreground">Start shortening links in seconds.</p>
       </div>
 
+      {/* method="post" so a submit before hydration can never put credentials in the URL */}
       <form
+        method="post"
         className="flex flex-col gap-4"
         onSubmit={handleSubmit((values) => mutation.mutate(values))}
       >

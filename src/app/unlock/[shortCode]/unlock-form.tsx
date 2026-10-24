@@ -60,6 +60,7 @@ export function UnlockForm({ shortCode }: { shortCode: string }) {
         </div>
 
         <form
+          method="post"
           className="flex flex-col gap-4"
           onSubmit={handleSubmit((values) => mutation.mutate(values))}
         >
